@@ -26,6 +26,8 @@ class DistPreprocessSmall:
         self.rank = [0] * n
 
         # Implement preprocessing here
+        self.dist = [self.INFINITY] * n
+        self.neighbors = [0] * n
         pass
 
     def mark_visited(self, x):
@@ -48,15 +50,66 @@ class DistPreprocessSmall:
     # Makes shortcuts for contracting node v
     def shortcut(self, v):
         # Implement this method yourself
-
-        # Compute the node importance in the end
         shortcut_count = 0
         neighbors = 0
         shortcut_cover = 0
         level = 0
+
+        importance = self.computeImportance(v)
+        second = heapq.heappop(self.q)
+        if importance > second[0]:
+            heapq.heappush(self.q, (importance, v))
+        else:
+            heapq.heappush(self.q, (second[0], second[1]))
+
+            self.contracted[v] = True
+            maxDist = max(self.adj[1][v]) + max(self.adj[0][v])
+            for i, s in enumerate(self.adj[1][v]):
+                if self.visited[t] == True:
+                    continue
+                self.dijkstra(s, maxDist)
+                for j, t in enumerate(self.adj[0][v]):
+                    if self.cost[s][i] + self.cost[t][j] < self.dist[t]:
+                        self.add_arc(s, t, self.dist[t])
+                        shortcut_count + = 1
+            # Compute the node importance in the end
+            self.calibrateNeighbours(v)
         # Compute correctly the values for the above heuristics before computing the node importance
         importance = (shortcut_count - len(self.adj[0][v]) - len(self.adj[1][v])) + neighbors + shortcut_cover + level
         return importance, shortcuts, level
+
+    def calibrateNeighbours(self, v):
+        for i, s in enumerate(self.adj[1][v]):
+                self.neighbors[s] += 1
+        for i, t in enumerate(self.adj[0][v]):
+                self.neighbors[t] += 1
+        return neighbors
+
+
+    def preImportance(self):
+        for v in range(n):
+            edge_diff = (len(self.adj[0][v]) * len(self.adj[1][v])  - len(self.adj[0][v]) - len(self.adj[1][v]))
+            neighbors = len(self.adj[0][v]) + len(self.adj[1][v])
+            shortcut_cover = 0 
+            level = 0
+            heapq.heappush(self.q, (edge_diff + neighbours + shortcut_cover + level, v))
+
+    def dijkstra(self, s, max):
+        q = []
+        heapq.heappush(q, (0, s))
+
+        while q:
+            u = heapq.heappop(q)[1]
+
+            if self.visited[u] == True:
+                continue
+
+            for i, v in enumerate(adj[u]):
+                if self.dist[v] > max:
+                    return
+                if self.dist[v] > self.dist[u] + self.cost[u][i]:
+                    self.dist[v] = self.dist[u] + self.cost[u][i]
+                    heapq.heappush(q, (self.dist[v], v))
 
     # See description of this method in the starter for friend_suggestion
     def clear():
@@ -72,10 +125,20 @@ class DistPreprocessSmall:
 
     # Returns the distance from s to t in the graph
     def query(self, s, t):
-        q = [queue.PriorityQueue(), queue.PriorityQueue()]
+        q = [[], []]
         estimate = self.INFINITY
+
+        self.preImportance()
+
         visit(0, s, 0)
         visit(1, t, 0)
+
+        while self.q:
+
+            u = heapq.heappop(self.q)[1]
+            
+
+
         # Implement the rest of the algorithm yourself
 
         return -1 if estimate == self.INFINITY else estimate
