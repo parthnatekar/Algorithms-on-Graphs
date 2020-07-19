@@ -19,16 +19,39 @@ class DistPreprocessSmall:
         self.bidistance = [[self.INFINITY] * n, [self.INFINITY] * n]
         self.visited = [False] * n
         self.visited = []
-        self.q = queue.PriorityQueue()
+        self.q = []
         # Levels of nodes for node ordering heuristics
         self.level = [0] * n
         # Positions of nodes in the node ordering
         self.rank = [0] * n
 
-        # Implement preprocessing here
         self.dist = [self.INFINITY] * n
         self.neighbors = [0] * n
-        pass
+
+        estimate = self.INFINITY
+        rank = 0
+
+        self.preImportance()
+        
+        while self.q:
+
+            u = heapq.heappop(self.q)[1]
+
+            second = heapq.heappop(self.q)
+
+            importance, shortcuts = self.shortcut(self, v)
+
+            if importance <= second[0]:
+                for item in shortcuts:
+                    self.add_arc(*item)
+                self.rank[u] = rank
+                self.recalibrateNeighbours(u)
+            else:
+                heapq.heappush(q, (importance, u))
+
+            rank += 1
+            heapq.heappush(q, (isecond[0], second[1]))
+
 
     def mark_visited(self, x):
         if not self.visited[x]:
@@ -51,38 +74,35 @@ class DistPreprocessSmall:
     def shortcut(self, v):
         # Implement this method yourself
         shortcut_count = 0
-        neighbors = 0
         shortcut_cover = 0
-        level = 0
-
-        importance = self.computeImportance(v)
-        second = heapq.heappop(self.q)
-        if importance > second[0]:
-            heapq.heappush(self.q, (importance, v))
-        else:
-            heapq.heappush(self.q, (second[0], second[1]))
-
-            self.contracted[v] = True
-            maxDist = max(self.adj[1][v]) + max(self.adj[0][v])
-            for i, s in enumerate(self.adj[1][v]):
-                if self.visited[t] == True:
+        neighbors = self.neighbours[v]
+        level = self.level[v]
+        shortcuts = []
+        
+        maxDist = max(self.adj[1][v]) + max(self.adj[0][v])
+        for i, s in enumerate(self.adj[1][v]):
+            if self.rank[s] < self.rank[v]:
+                continue
+            self.dijkstra(s, maxDist)
+            for j, t in enumerate(self.adj[0][v]):
+                if self.rank[t] < self.rank[v] or t == v:
                     continue
-                self.dijkstra(s, maxDist)
-                for j, t in enumerate(self.adj[0][v]):
-                    if self.cost[s][i] + self.cost[t][j] < self.dist[t]:
-                        self.add_arc(s, t, self.dist[t])
-                        shortcut_count + = 1
-            # Compute the node importance in the end
-            self.calibrateNeighbours(v)
+                if self.cost[s][i] + self.cost[t][j] < self.dist[t]:
+                    shortcut_count += 1
+                    shortcut_cover += 2
+                    shortcuts.append((s, t, self.cost[1][v][i] + self.cost[0][v][j]))
+
         # Compute correctly the values for the above heuristics before computing the node importance
         importance = (shortcut_count - len(self.adj[0][v]) - len(self.adj[1][v])) + neighbors + shortcut_cover + level
-        return importance, shortcuts, level
+        return importance, shortcuts
 
-    def calibrateNeighbours(self, v):
+    def recalibrateNeighbours(self, v, preCompute):
         for i, s in enumerate(self.adj[1][v]):
                 self.neighbors[s] += 1
+                self.level[s] = max(self.level[s], self.level[v] + 1)
         for i, t in enumerate(self.adj[0][v]):
                 self.neighbors[t] += 1
+                self.level[t] = max(self.level[s], self.level[v] + 1)
         return neighbors
 
 
@@ -107,8 +127,8 @@ class DistPreprocessSmall:
             for i, v in enumerate(adj[u]):
                 if self.dist[v] > max:
                     return
-                if self.dist[v] > self.dist[u] + self.cost[u][i]:
-                    self.dist[v] = self.dist[u] + self.cost[u][i]
+                if self.dist[v] > self.dist[u] + self.cost[0][u][i]:
+                    self.dist[v] = self.dist[u] + self.cost[0][u][i]
                     heapq.heappush(q, (self.dist[v], v))
 
     # See description of this method in the starter for friend_suggestion
@@ -126,20 +146,11 @@ class DistPreprocessSmall:
     # Returns the distance from s to t in the graph
     def query(self, s, t):
         q = [[], []]
-        estimate = self.INFINITY
 
-        self.preImportance()
-
-        visit(0, s, 0)
+        visit(0, s, 0) #Visit is redundant, just put s in queue with dist 0 and t in q_r with dist 0
         visit(1, t, 0)
 
-        while self.q:
-
-            u = heapq.heappop(self.q)[1]
-            
-
-
-        # Implement the rest of the algorithm yourself
+        #JUST RUN DIJKSTRA ON AUGMENTED GRAPH
 
         return -1 if estimate == self.INFINITY else estimate
 
